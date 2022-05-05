@@ -1,0 +1,181 @@
+/*
+this program assumes the runtime is 0, the executiontime for each part would have to be messured to be really accurate, the time the signal needs is also not included
+*/
+  int a;
+  int channel;
+  int counter;
+  bool buttonpressed;
+  int messagetype;
+  /*
+    The first bit is set 1(so the presented numbers are messagetype + 8), so in hexadecimal the numbers relating to the commands/messagetypes are as following:
+    8 = Note Off 
+    9 = Note On
+    A = AfterTouch (ie, key pressure)
+    B = Control Change
+    C = Program (patch) change
+    D = Channel Pressure
+    E = Pitch Wheel
+  */
+void setup() 
+{
+  pinMode(A0,INPUT);
+  pinMode(7,INPUT);
+  pinMode(A5,INPUT);
+  pinMode(1,OUTPUT);
+  pinMode(5,OUTPUT);
+  pinMode(8,OUTPUT);
+  pinMode(9,OUTPUT);
+  pinMode(10,OUTPUT);
+  pinMode(11,OUTPUT);
+  pinMode(12,OUTPUT);
+  Serial.begin(31250);
+  a = 1;
+  channel = 0;
+  counter = 0;
+  buttonpressed = true;
+  messagetype = 1;
+}
+
+void loop() 
+{
+  int inputelec;
+  int inputpot;
+  int buttonpress;
+  a++;
+  counter++;
+  if (counter == 1)
+  {
+    buttonpress = digitalRead(7);
+    counter = 0;
+  }
+  
+  
+  
+  //This part checks every second if the button is pressed.//
+  if (buttonpress == HIGH)
+  {
+    //Here the button acts as a button to turn the process on and off, it is checked if it is pressed and turning on and off is managed//
+    if (buttonpressed == false)
+    {
+      buttonpressed = true;
+    }
+    else 
+    {
+      buttonpressed = false;
+    }
+    delay(1);
+  }
+  if (buttonpressed == true)
+  {
+    digitalWrite(5,HIGH);
+    inputpot = analogRead(A0);
+    inputelec = analogRead(A5);
+    sendSignal(inputpot, inputelec, messagetype, channel);
+    digitalWrite(5,LOW);
+    /*
+    This part reads the analog value of the inputs and via the function sendSignal() creates the MIDI-signal and sends it trough the connector. It also increases the counter to only check if the button
+    is checked every second.
+    */
+  }
+  setlights(inputelec);
+
+  
+}
+void sendSignal(int pot, int elec, int msg, int chan)
+{
+  int losspot = 1023 - pot; //for inputpot//
+  int losselec = 1023 - elec; //for inputelec//
+  int valuepot = round(losspot/8); 
+  //the potentiometer controls the velocity, therefore the amount of possible values must be reduced, because the velocity only uses 7 bits and the analog signal 10//
+  int valueelec = round(losselec/8);
+  //same as aboth//
+  if (valueelec < 21)
+  {
+    valuepot = 0;
+    valueelec = 21;
+  }
+  //the notes begin at 21, therefore it can't be below 21 in the signal, but because we can't hear below the first note, the velocity must be 0//
+  int firstByte = 128 + msg*16 + chan;
+  /*
+  the first Byte of the signal, consisting of three Bytes, has a 1 as the first bit as an identifier of the byte, then come three bits with the command that is supposed
+  to be executed and the last nibble of the byte contains the channeldata, this calculation creates the integer, that is equivalant in binary to the command. It utilizes 
+  the property, that in binary commands are integers. The value 128 sets the fist bit to 1 and msg*16 sets the next three bits, because the last bit of it is the one
+  representing 16 in binary and msg starts with 1, the last four bits are equivalent to the channelnumber, therefore it can just be added to the integer
+  */
+  int secondByte = valueelec;
+  //the second byte has an identifier of 0, so nothing ist added, and the seven following bits are just the note, so they are equivalent to valueelec//
+  int thirdByte = valuepot;
+  //similar to the byte aboth but with the velocity as the last seven bits, so valuepot is the byte//
+  Serial.write(firstByte); //Arduino has a default of one start bit and one stop bit, no parity bit. Also as a default it only transmits a byte//
+  Serial.write(secondByte); //MIDI needs one start and one stop bit and no parity bit, so the default fits//
+  Serial.write(thirdByte); //the pin for transmission is labeled tx and the one for receiving is labeled rx//
+
+}
+
+void setlights(int val)
+{
+  int octave = round((1023-val)/8)/12;
+  digitalWrite(12,LOW);
+  digitalWrite(11,LOW);
+  digitalWrite(10,LOW);
+  digitalWrite(9,LOW);
+  digitalWrite(8,LOW);
+  Serial.print(octave);
+  /*
+  The lights have to be turned on and off manualy in the code. Here they are used to show how good the conductivity ist. They represent a number, the counting system has the base 6 and the first light is white, 
+  the last red. Only the exponent 0 ist used, therfore the final number is the sum of all represented numbers, the first number is one, because zero is reserved for errors. All lights turned off here to
+  minimize code and keep it easy to manage.
+  */
+  switch(octave)
+  {
+    // here are the lights turned on in response to the detected value//
+    case 0:
+    digitalWrite(12,HIGH);
+    break;
+    case 1:
+    digitalWrite(11,HIGH);
+    break;
+    case 2:
+    digitalWrite(10,HIGH);
+    break;
+    case 3:
+    digitalWrite(9,HIGH);
+    break;
+    case 4:
+    digitalWrite(8,HIGH);
+    break;
+    case 5:
+    digitalWrite(8,HIGH);
+    digitalWrite(12,HIGH);
+    break;
+    case 6:
+    digitalWrite(8,HIGH);
+    digitalWrite(11,HIGH);
+    break;
+    case 7:
+    digitalWrite(8,HIGH);
+    digitalWrite(10,HIGH);
+    break;
+    case 8:
+    digitalWrite(8,HIGH);
+    digitalWrite(9,HIGH);
+    break;
+    case 9:
+    digitalWrite(8,HIGH);
+    digitalWrite(9,HIGH);
+    digitalWrite(12,HIGH);
+    break;
+    case 10:
+    digitalWrite(8,HIGH);
+    digitalWrite(9,HIGH);
+    digitalWrite(11,HIGH);
+    break;
+    case 11:
+    digitalWrite(8,HIGH);
+    digitalWrite(9,HIGH);
+    digitalWrite(10,HIGH);
+    break;
+    default:
+    break;
+  }
+}

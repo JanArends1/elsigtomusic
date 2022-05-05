@@ -1,0 +1,26 @@
+if you send out the pulse via hardware:
+1X Arduino
+1X 100ohm resistor
+1X Computer with Arduino IDE & Sound Sythesis program
+1X Electrode Pad pair
+1X Solderless Breadboard
+1X 555 Timer IC
+1X Potentiometer
+1X Button
+1X 3.5mm jack
+1X 5 pin MIDI jack
+1X 0.1uf capacitor
+1X 4700pF capacitor
+1X 47uF capacitor
+1X SerialMIDI
+1X MIDI Yoke
+6X LEDs: 2X red, 1X yellow, 1X green, 1X blue, 1X white
+7X 220ohm resistors
+22X Jumper Wires: 6X black(1X long), 6X red, 2X orange(1X long), 2X brown, 2X blue, 2X white, 1X yellow, 1X green
+if you send out the pulse via software:
+you can dump 
+4X Jumper Wires: 1X red, 2X black, 1X blue
+3X capacitors: 1X 0.1uF, 47uF, 4700pF
+resistors: 1X 220ohm, 1X 100ohm resistor
+1X 555 Timer IC
+
